@@ -24,6 +24,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 		return 1;
 	}
 
+	uint32_t supported_vk_version = volkGetInstanceVersion();
+	if (supported_vk_version == 0) {
+		MessageBoxW(nullptr, L"Failed to read supported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		return 1;
+	}
+
+	if ((VK_VERSION_MAJOR(supported_vk_version) != 1) || (VK_VERSION_MINOR(supported_vk_version) > 3)) {
+		MessageBoxW(nullptr, L"Unsupported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		return 1;
+	}
+
+	VkApplicationInfo appInfo{};
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pNext = NULL;
+	appInfo.pApplicationName = "Simulator";
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.pEngineName = "none";
+	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.apiVersion = VK_MAKE_VERSION(1, 3, 0);
+
 	WNDCLASSEXW window_class{};
 	window_class.cbSize = sizeof(WNDCLASSEX);
 	window_class.style = CS_HREDRAW | CS_VREDRAW;
