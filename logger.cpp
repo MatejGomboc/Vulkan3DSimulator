@@ -44,6 +44,7 @@ void Logger::stop()
 
 	m_worker_thread_state = ThreadState::STOPPING;
 	m_worker_thread_mutex.unlock();
+	m_message_fifo_wait_condition.notify_one();
 }
 
 void Logger::logDebug(const std::string& message)
@@ -76,6 +77,11 @@ void Logger::logProcess(Logger* logger)
 	logger->m_worker_thread_mutex.unlock();
 
 	while (true) {
+		{
+			std::unique_lock<std::mutex> wait_lock(logger->m_message_fifo_mutex);
+			logger->m_message_fifo_wait_condition.wait(wait_lock);
+		}
+
 		while (true) {
 			logger->m_message_fifo_mutex.lock();
 
@@ -118,7 +124,10 @@ void Logger::logWrite(const std::string& message)
 	}
 
 	m_worker_thread_mutex.unlock();
+
 	m_message_fifo_mutex.lock();
 	m_message_fifo.push(message);
 	m_message_fifo_mutex.unlock();
+
+	m_message_fifo_wait_condition.notify_one();
 }

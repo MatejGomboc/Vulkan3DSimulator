@@ -29,7 +29,7 @@ namespace Simulator {
 
 		std::queue<std::string> m_message_fifo;
 		std::mutex m_message_fifo_mutex;
-		std::condition_variable m_message_fifo_condition;
+		std::condition_variable m_message_fifo_wait_condition;
 
 		std::thread m_worker_thread;
 		ThreadState m_worker_thread_state = ThreadState::STOPPED;
