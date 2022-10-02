@@ -1,13 +1,14 @@
 #include <SDKDDKVer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <cstdlib>
 #include <Volk/volk.h>
 
 LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	if (message == WM_DESTROY) {
 		DestroyWindow(window);
-		PostQuitMessage(0);
+		PostQuitMessage(EXIT_SUCCESS);
 	}
 
 	return DefWindowProc(window, message, wparam, lparam);
@@ -21,18 +22,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 
 	if (volkInitialize() != VK_SUCCESS) {
 		MessageBoxW(nullptr, L"Vulkan not found on this system.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	uint32_t supported_vk_version = volkGetInstanceVersion();
 	if (supported_vk_version == 0) {
 		MessageBoxW(nullptr, L"Failed to read supported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	if ((VK_VERSION_MAJOR(supported_vk_version) != 1) || (VK_VERSION_MINOR(supported_vk_version) > 3)) {
 		MessageBoxW(nullptr, L"Unsupported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	VkApplicationInfo appInfo{};
@@ -60,7 +61,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 
 	if (RegisterClassExW(&window_class) == 0) {
 		MessageBoxW(nullptr, L"Cannot register window class.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	HWND window = CreateWindowW(L"MainWindow", L"Simulator", WS_OVERLAPPEDWINDOW,
@@ -68,14 +69,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 
 	if (window == nullptr) {
 		MessageBoxW(nullptr, L"Cannot create main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	ShowWindow(window, cmd_show);
 
 	if (!UpdateWindow(window)) {
 		MessageBoxW(nullptr, L"Cannot update main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	MSG message;
