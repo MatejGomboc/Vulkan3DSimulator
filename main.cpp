@@ -21,18 +21,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 	UNREFERENCED_PARAMETER(cmd_line);
 
 	if (volkInitialize() != VK_SUCCESS) {
-		MessageBoxW(nullptr, L"Vulkan not found on this system.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, L"Vulkan not found on this system.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
 	uint32_t supported_vk_version = volkGetInstanceVersion();
 	if (supported_vk_version == 0) {
-		MessageBoxW(nullptr, L"Failed to read supported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, L"Failed to read supported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
 	if ((VK_VERSION_MAJOR(supported_vk_version) != 1) || (VK_VERSION_MINOR(supported_vk_version) > 3)) {
-		MessageBoxW(nullptr, L"Unsupported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, L"Unsupported Vulkan version.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
@@ -60,7 +60,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 	window_class.hIconSm = nullptr;
 
 	if (RegisterClassExW(&window_class) == 0) {
-		MessageBoxW(nullptr, L"Cannot register window class.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, L"Cannot register window class.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
@@ -68,14 +68,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, app_instance, nullptr);
 
 	if (window == nullptr) {
-		MessageBoxW(nullptr, L"Cannot create main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, L"Cannot create main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
 	ShowWindow(window, cmd_show);
 
 	if (!UpdateWindow(window)) {
-		MessageBoxW(nullptr, L"Cannot update main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, L"Cannot update main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
