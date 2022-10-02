@@ -4,14 +4,18 @@
 #include <cstdlib>
 #include "renderer.h"
 
-LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
+static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	if (message == WM_DESTROY) {
+	switch (message) {
+	case WM_CLOSE:
 		DestroyWindow(window);
+		return 0;
+	case WM_DESTROY:
 		PostQuitMessage(EXIT_SUCCESS);
+		return 0;
+	default:
+		return DefWindowProc(window, message, wparam, lparam);
 	}
-
-	return DefWindowProcW(window, message, wparam, lparam);
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_instance,
@@ -28,36 +32,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 	window_class.cbWndExtra = 0;
 	window_class.hInstance = app_instance;
 	window_class.hIcon = nullptr;
-	window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+	window_class.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	window_class.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	window_class.lpszMenuName = nullptr;
-	window_class.lpszClassName = L"MainWindow";
+	window_class.lpszClassName = TEXT("MainWindow");
 	window_class.hIconSm = nullptr;
 
-	if (RegisterClassExW(&window_class) == 0) {
-		MessageBoxW(nullptr, L"Cannot register window class.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+	if (RegisterClassEx(&window_class) == 0) {
+		MessageBox(nullptr, TEXT("Cannot register window class."), TEXT("ERROR"), MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
-	HWND window = CreateWindowW(L"MainWindow", L"Simulator", WS_OVERLAPPEDWINDOW,
+	HWND window = CreateWindow(TEXT("MainWindow"), TEXT("Simulator"), WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, app_instance, nullptr);
 
 	if (window == nullptr) {
-		MessageBoxW(nullptr, L"Cannot create main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBox(nullptr, TEXT("Cannot create main window."), TEXT("ERROR"), MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
 		return EXIT_FAILURE;
 	}
 
 	ShowWindow(window, cmd_show);
 
-	if (!UpdateWindow(window)) {
-		MessageBoxW(nullptr, L"Cannot update main window.", L"ERROR", MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
-		return EXIT_FAILURE;
-	}
-
 	MSG message;
-	while (GetMessageW(&message, nullptr, 0, 0)) {
+	while (GetMessage(&message, nullptr, 0, 0)) {
 		TranslateMessage(&message);
-		DispatchMessageW(&message);
+		DispatchMessage(&message);
 	}
 
 	return (int)message.wParam;
