@@ -4,15 +4,26 @@
 #include <cstdlib>
 #include "renderer.h"
 
+static Renderer renderer;
+
 static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message) {
-	case WM_CLOSE:
+	case WM_CREATE: {
+		std::string out_error_message;
+		if (!renderer.Init(out_error_message)) {
+			PostMessage(window, WM_CLOSE, 0, 0);
+		}
+		return 0;
+	}
+	case WM_CLOSE: {
 		DestroyWindow(window);
 		return 0;
-	case WM_DESTROY:
+	}
+	case WM_DESTROY: {
 		PostQuitMessage(EXIT_SUCCESS);
 		return 0;
+	}
 	default:
 		return DefWindowProc(window, message, wparam, lparam);
 	}
