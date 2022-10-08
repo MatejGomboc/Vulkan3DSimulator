@@ -4,10 +4,11 @@ using namespace Simulator;
 
 Logger::~Logger()
 {
-	stop();
+	requestStop();
+	waitForStop();
 }
 
-bool Logger::start(std::string& out_error_message)
+bool Logger::start(const std::string& log_file_name, std::string& out_error_message)
 {
 	out_error_message.clear();
 	m_worker_thread_mutex.lock();
@@ -18,7 +19,11 @@ bool Logger::start(std::string& out_error_message)
 		return false;
 	}
 
-	m_file.open("log.txt", std::ofstream::out | std::ofstream::trunc);
+	if (m_worker_thread.joinable()) {
+		m_worker_thread.join();
+	}
+
+	m_file.open(log_file_name, std::ofstream::out | std::ofstream::trunc);
 
 	if (!m_file.is_open()) {
 		out_error_message = "Failed to create log file.";
@@ -32,7 +37,25 @@ bool Logger::start(std::string& out_error_message)
 	return true;
 }
 
-void Logger::stop()
+void Logger::logWrite(const std::string& message)
+{
+	m_worker_thread_mutex.lock();
+
+	if (m_worker_thread_state != ThreadState::RUNNING) {
+		m_worker_thread_mutex.unlock();
+		return;
+	}
+
+	m_worker_thread_mutex.unlock();
+
+	m_message_fifo_mutex.lock();
+	m_message_fifo.push(message);
+	m_message_fifo_mutex.unlock();
+
+	m_worker_thread_wait_condition.notify_all();
+}
+
+void Logger::requestStop()
 {
 	m_worker_thread_mutex.lock();
 
@@ -44,22 +67,40 @@ void Logger::stop()
 
 	m_worker_thread_state = ThreadState::STOPPING;
 	m_worker_thread_mutex.unlock();
-	m_message_fifo_wait_condition.notify_one();
+
+	m_worker_thread_wait_condition.notify_all();
 }
 
-void Logger::logDebug(const std::string& message)
+void Logger::waitForStop()
 {
-	logWrite("[DEBUG] " + message);
-}
+	m_worker_thread_mutex.lock();
 
-void Logger::logWarning(const std::string& message)
-{
-	logWrite("[WARNING] " + message);
-}
+	if (m_worker_thread_state == ThreadState::STOPPED) {
+		if (m_worker_thread.joinable()) {
+			m_worker_thread.join();
+		}
+		m_worker_thread_mutex.unlock();
+		return;
+	}
 
-void Logger::logError(const std::string& message)
-{
-	logWrite("[ERROR] " + message);
+	m_worker_thread_mutex.unlock();
+
+	{
+		std::unique_lock<std::mutex> wait_lock(m_stop_wait_mutex);
+		m_stop_wait_condition.wait(wait_lock);
+	}
+
+	m_worker_thread_mutex.lock();
+
+	if (m_worker_thread_state == ThreadState::STOPPED) {
+		if (m_worker_thread.joinable()) {
+			m_worker_thread.join();
+		}
+		m_worker_thread_mutex.unlock();
+		return;
+	}
+
+	m_worker_thread_mutex.unlock();
 }
 
 void Logger::logProcess(Logger* logger)
@@ -77,11 +118,6 @@ void Logger::logProcess(Logger* logger)
 	logger->m_worker_thread_mutex.unlock();
 
 	while (true) {
-		{
-			std::unique_lock<std::mutex> wait_lock(logger->m_message_fifo_mutex);
-			logger->m_message_fifo_wait_condition.wait(wait_lock);
-		}
-
 		while (true) {
 			logger->m_message_fifo_mutex.lock();
 
@@ -111,23 +147,12 @@ void Logger::logProcess(Logger* logger)
 		if (should_thread_stop) {
 			break;
 		}
-	}
-}
 
-void Logger::logWrite(const std::string& message)
-{
-	m_worker_thread_mutex.lock();
-
-	if (m_worker_thread_state != ThreadState::RUNNING) {
-		m_worker_thread_mutex.unlock();
-		return;
+		{
+			std::unique_lock<std::mutex> wait_lock(logger->m_worker_thread_wait_mutex);
+			logger->m_worker_thread_wait_condition.wait(wait_lock);
+		}
 	}
 
-	m_worker_thread_mutex.unlock();
-
-	m_message_fifo_mutex.lock();
-	m_message_fifo.push(message);
-	m_message_fifo_mutex.unlock();
-
-	m_message_fifo_wait_condition.notify_one();
+	logger->m_stop_wait_condition.notify_all();
 }

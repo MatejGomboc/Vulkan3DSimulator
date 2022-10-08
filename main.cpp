@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include "renderer.h"
 
-static Renderer renderer;
+static Simulator::Renderer renderer;
 
 static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam)
 {

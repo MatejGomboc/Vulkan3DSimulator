@@ -4,30 +4,32 @@
 #include <string>
 #include <vector>
 
-class Renderer {
-public:
+namespace Simulator {
+	class Renderer {
+	public:
 #ifdef _DEBUG
-	static bool areLayersSupported(const std::vector<const char*>& layers);
+		static bool areLayersSupported(const std::vector<const char*>& layers);
 #endif
-	static bool areExtensionsSupported(const std::vector<const char*>& extensions);
+		static bool areExtensionsSupported(const std::vector<const char*>& extensions);
 
-	~Renderer();
-	bool init(std::string& out_error_message);
-	void destroy();
+		~Renderer();
+		bool init(std::string& out_error_message);
+		void destroy();
 
-private:
+	private:
 #ifdef _DEBUG
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-		VkDebugUtilsMessageTypeFlagsEXT message_type,
-		const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-		void* user_data
-	);
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+			VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+			VkDebugUtilsMessageTypeFlagsEXT message_type,
+			const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+			void* user_data
+		);
 #endif
 
-	bool m_initialized = false;
-	VkInstance m_vk_instance = nullptr;
+		bool m_initialized = false;
+		VkInstance m_vk_instance = nullptr;
 #ifdef _DEBUG
-	VkDebugUtilsMessengerEXT m_vk_debug_messenger = nullptr;
+		VkDebugUtilsMessengerEXT m_vk_debug_messenger = nullptr;
 #endif
-};
+	};
+}

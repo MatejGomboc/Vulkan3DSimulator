@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+using namespace Simulator;
+
 #ifdef _DEBUG
 bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
 {
