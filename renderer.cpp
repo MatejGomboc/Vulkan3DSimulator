@@ -75,19 +75,30 @@ Renderer::~Renderer()
 
 bool Renderer::init(std::string& out_error_message)
 {
+	if (!m_logger.start("renderer_log.txt", out_error_message)) {
+		destroy();
+		return false;
+	}
+
 	if (m_initialized) {
 		out_error_message = "Renderer already initialized.";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 
 	if (volkInitialize() != VK_SUCCESS) {
 		out_error_message = "Vulkan not found on this system.";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 
 	uint32_t vk_version = volkGetInstanceVersion();
 	if (vk_version == 0) {
 		out_error_message = "Failed to get Vulkan version.";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 
@@ -99,6 +110,8 @@ bool Renderer::init(std::string& out_error_message)
 			"." + std::to_string(VK_API_VERSION_MINOR(vk_version)) +
 			"." + std::to_string(VK_API_VERSION_PATCH(vk_version)) +
 			":" + std::to_string(VK_API_VERSION_VARIANT(vk_version));
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 
@@ -108,6 +121,8 @@ bool Renderer::init(std::string& out_error_message)
 
 	if (!areLayersSupported(vk_layers)) {
 		out_error_message = "The necessary Vulkan layers are not supported.";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 #endif
@@ -122,6 +137,8 @@ bool Renderer::init(std::string& out_error_message)
 
 	if (!areExtensionsSupported(vk_extensions)) {
 		out_error_message = "The necessary Vulkan extensions are not supported.";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 
@@ -147,7 +164,7 @@ bool Renderer::init(std::string& out_error_message)
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	debug_messenger_info.pfnUserCallback = debugCallback;
-	debug_messenger_info.pUserData = nullptr;
+	debug_messenger_info.pUserData = &m_logger;
 #endif
 
 	VkInstanceCreateInfo inst_info{};
@@ -171,8 +188,9 @@ bool Renderer::init(std::string& out_error_message)
 
 	VkResult vk_error = vkCreateInstance(&inst_info, nullptr, &m_vk_instance);
 	if (vk_error != VK_SUCCESS) {
-		destroy();
 		out_error_message = "Failed to create Vulkan instance. VK error:" + std::to_string(vk_error) + ".";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 
@@ -181,8 +199,9 @@ bool Renderer::init(std::string& out_error_message)
 #ifdef _DEBUG
 	vk_error = vkCreateDebugUtilsMessengerEXT(m_vk_instance, &debug_messenger_info, nullptr, &m_vk_debug_messenger);
 	if (vk_error != VK_SUCCESS) {
-		destroy();
 		out_error_message = "Failed to create Vulkan debug messenger. VK error:" + std::to_string(vk_error) + ".";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		destroy();
 		return false;
 	}
 #endif
@@ -205,6 +224,8 @@ void Renderer::destroy()
 		m_vk_instance = nullptr;
 	}
 
+	m_logger.requestStop();
+	m_logger.waitForStop();
 	m_initialized = false;
 }
 
@@ -215,7 +236,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
 	void* user_data)
 {
-	// TODO !!!
+	auto logger = reinterpret_cast<Logger*>(user_data);
+	logger->logWrite("[LAYER] " + std::string(callback_data->pMessage));
 	return VK_FALSE;
 }
 #endif

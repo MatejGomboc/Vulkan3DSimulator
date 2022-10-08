@@ -3,6 +3,7 @@
 #include <Volk/volk.h>
 #include <string>
 #include <vector>
+#include "logger.h"
 
 namespace Simulator {
 	class Renderer {
@@ -27,6 +28,7 @@ namespace Simulator {
 #endif
 
 		bool m_initialized = false;
+		Logger m_logger;
 		VkInstance m_vk_instance = nullptr;
 #ifdef _DEBUG
 		VkDebugUtilsMessengerEXT m_vk_debug_messenger = nullptr;
