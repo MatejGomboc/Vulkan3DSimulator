@@ -10,10 +10,6 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 {
 	switch (message) {
 	case WM_CREATE: {
-		std::string out_error_message;
-		if (!renderer.Init(out_error_message)) {
-			PostMessage(window, WM_CLOSE, 0, 0);
-		}
 		return 0;
 	}
 	case WM_CLOSE: {
@@ -35,6 +31,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 	UNREFERENCED_PARAMETER(prev_app_instance);
 	UNREFERENCED_PARAMETER(cmd_line);
 
+	std::string out_error_message;
+	if (!renderer.init(out_error_message)) {
+		MessageBoxA(nullptr, out_error_message.c_str(), "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
+		return EXIT_FAILURE;
+	}
+
 	WNDCLASSEXW window_class{};
 	window_class.cbSize = sizeof(WNDCLASSEX);
 	window_class.style = CS_HREDRAW | CS_VREDRAW;
@@ -50,7 +52,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 	window_class.hIconSm = nullptr;
 
 	if (RegisterClassEx(&window_class) == 0) {
-		MessageBox(nullptr, TEXT("Cannot register window class."), TEXT("ERROR"), MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBoxA(nullptr, "Cannot register window class.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
 		return EXIT_FAILURE;
 	}
 
@@ -58,7 +60,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, app_instance, nullptr);
 
 	if (window == nullptr) {
-		MessageBox(nullptr, TEXT("Cannot create main window."), TEXT("ERROR"), MB_ICONERROR | MB_OK | MB_SYSTEMMODAL);
+		MessageBoxA(nullptr, "Cannot create main window.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
 		return EXIT_FAILURE;
 	}
 
@@ -70,5 +72,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 		DispatchMessage(&message);
 	}
 
+	renderer.destroy();
 	return (int)message.wParam;
 }

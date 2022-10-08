@@ -5,5 +5,11 @@
 
 class Renderer {
 public:
-	bool Init(std::string& out_error_message);
+	~Renderer();
+	bool init(std::string& out_error_message);
+	void destroy();
+
+private:
+	bool m_initialized = false;
+	VkInstance m_vk_instance = nullptr;
 };
