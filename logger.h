@@ -25,19 +25,12 @@ namespace Simulator {
 
 		static void logProcess(Logger* logger);
 
+		std::ofstream m_file;
 		std::queue<std::string> m_message_fifo;
-		std::mutex m_message_fifo_mutex;
-
 		std::thread m_worker_thread;
 		ThreadState m_worker_thread_state = ThreadState::STOPPED;
 		std::mutex m_worker_thread_mutex;
-
-		std::ofstream m_file;
-
-		std::mutex m_worker_thread_wait_mutex;
-		std::condition_variable m_worker_thread_wait_condition;
-
-		std::mutex m_stop_wait_mutex;
-		std::condition_variable m_stop_wait_condition;
+		std::condition_variable m_worker_thread_wait_variable;
+		std::condition_variable m_stop_wait_variable;
 	};
 }
