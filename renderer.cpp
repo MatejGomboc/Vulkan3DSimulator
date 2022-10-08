@@ -41,7 +41,7 @@ bool Renderer::init(std::string& out_error_message)
 
 	VkApplicationInfo app_info{};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.pNext = NULL;
+	app_info.pNext = nullptr;
 	app_info.pApplicationName = "Simulator";
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	app_info.pEngineName = "none";
@@ -50,7 +50,7 @@ bool Renderer::init(std::string& out_error_message)
 
 	VkInstanceCreateInfo inst_info{};
 	inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	inst_info.pNext = NULL;
+	inst_info.pNext = nullptr;
 	inst_info.flags = 0;
 	inst_info.pApplicationInfo = &app_info;
 	inst_info.enabledLayerCount = static_cast<uint32_t>(layers.size());
