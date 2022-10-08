@@ -1,5 +1,37 @@
 #include "renderer.h"
 
+#ifdef _DEBUG
+bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
+{
+	uint32_t supported_layers_count;
+	if (vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr) != VK_SUCCESS) {
+		return false;
+	}
+
+	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
+	if (vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data()) != VK_SUCCESS) {
+		return false;
+	}
+
+	for (const char* layer : layers) {
+		bool found = false;
+
+		for (const VkLayerProperties& supported_layer : supported_layers) {
+			if (std::string(layer) == std::string(supported_layer.layerName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif
+
 Renderer::~Renderer()
 {
 	destroy();
@@ -41,7 +73,7 @@ bool Renderer::init(std::string& out_error_message)
 	if (!areLayersSupported(layers)) {
 		out_error_message = "The necessary Vulkan layers are not supported.";
 		return false;
-	}
+}
 #endif
 
 	std::vector<const char*> extensions = {
@@ -93,35 +125,3 @@ void Renderer::destroy()
 
 	m_initialized = false;
 }
-
-#ifdef _DEBUG
-bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
-{
-	uint32_t supported_layers_count;
-	if (vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr) != VK_SUCCESS) {
-		return false;
-	}
-
-	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
-	if (vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data()) != VK_SUCCESS) {
-		return false;
-	}
-
-	for (const char* layer : layers) {
-		bool found = false;
-
-		for (const VkLayerProperties& supported_layer : supported_layers) {
-			if (std::string(layer) == std::string(supported_layer.layerName)) {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			return false;
-		}
-	}
-
-	return true;
-}
-#endif

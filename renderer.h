@@ -6,12 +6,12 @@
 
 class Renderer {
 public:
-	~Renderer();
-	bool init(std::string& out_error_message);
-	void destroy();
 #ifdef _DEBUG
 	static bool areLayersSupported(const std::vector<const char*>& layers);
 #endif
+	~Renderer();
+	bool init(std::string& out_error_message);
+	void destroy();
 
 private:
 	bool m_initialized = false;
