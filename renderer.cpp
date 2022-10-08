@@ -1,5 +1,4 @@
 #include "renderer.h"
-#include <vector>
 
 Renderer::~Renderer()
 {
@@ -18,20 +17,31 @@ bool Renderer::init(std::string& out_error_message)
 		return false;
 	}
 
-	uint32_t supported_vk_version = volkGetInstanceVersion();
-	if (supported_vk_version == 0) {
-		out_error_message = "Failed to read supported Vulkan version.";
+	uint32_t vk_version = volkGetInstanceVersion();
+	if (vk_version == 0) {
+		out_error_message = "Failed to get Vulkan version.";
 		return false;
 	}
 
-	if (VK_VERSION_MAJOR(supported_vk_version) != 1) {
-		out_error_message = "Unsupported Vulkan version.";
+	if ((VK_API_VERSION_VARIANT(vk_version) != 0) ||
+		(VK_API_VERSION_MAJOR(vk_version) != 1) ||
+		(VK_API_VERSION_MINOR(vk_version) > 3)) {
+		out_error_message = "Unsupported Vulkan version:" +
+			std::to_string(VK_API_VERSION_MAJOR(vk_version)) +
+			"." + std::to_string(VK_API_VERSION_MINOR(vk_version)) +
+			"." + std::to_string(VK_API_VERSION_PATCH(vk_version)) +
+			":" + std::to_string(VK_API_VERSION_VARIANT(vk_version));
 		return false;
 	}
 
+#ifdef _DEBUG
 	std::vector<const char*> layers;
-#if defined(_DEBUG)
 	layers.push_back("VK_LAYER_KHRONOS_validation");
+
+	if (!areLayersSupported(layers)) {
+		out_error_message = "The necessary Vulkan layers are not supported.";
+		return false;
+	}
 #endif
 
 	std::vector<const char*> extensions = {
@@ -53,8 +63,13 @@ bool Renderer::init(std::string& out_error_message)
 	inst_info.pNext = nullptr;
 	inst_info.flags = 0;
 	inst_info.pApplicationInfo = &app_info;
+#ifdef _DEBUG
 	inst_info.enabledLayerCount = static_cast<uint32_t>(layers.size());
 	inst_info.ppEnabledLayerNames = layers.data();
+#else
+	inst_info.enabledLayerCount = 0;
+	inst_info.ppEnabledLayerNames = nullptr;
+#endif
 	inst_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	inst_info.ppEnabledExtensionNames = extensions.data();
 
@@ -78,3 +93,35 @@ void Renderer::destroy()
 
 	m_initialized = false;
 }
+
+#ifdef _DEBUG
+bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
+{
+	uint32_t supported_layers_count;
+	if (vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr) != VK_SUCCESS) {
+		return false;
+	}
+
+	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
+	if (vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data()) != VK_SUCCESS) {
+		return false;
+	}
+
+	for (const char* layer : layers) {
+		bool found = false;
+
+		for (const VkLayerProperties& supported_layer : supported_layers) {
+			if (std::string(layer) == std::string(supported_layer.layerName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif
