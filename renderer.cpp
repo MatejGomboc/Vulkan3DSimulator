@@ -236,8 +236,42 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
 	void* user_data)
 {
-	auto logger = reinterpret_cast<Logger*>(user_data);
-	logger->logWrite("[LAYER] " + std::string(callback_data->pMessage));
+	std::string severity_str;
+	if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		severity_str = "[ERROR]";
+	}
+	else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+		severity_str = "[WARNING]";
+	}
+	else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+		severity_str = "[INFO]";
+	}
+	else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+		severity_str = "[VERBOSE]";
+	}
+	else {
+		severity_str = "[UNKNOWN]";
+	}
+
+	std::string type_str = "[";
+	if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+		type_str += "PERFORMANCE,";
+	}
+	if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+		type_str += "VALIDATION,";
+	}
+	if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
+		type_str += "GENERAL,";
+	}
+	if (type_str.size() > 1) {
+		type_str.pop_back();
+	}
+	type_str += "]";
+
+	auto logger = static_cast<Logger*>(user_data);
+	logger->logWrite("[LAYER] " + severity_str + " " + type_str + " " +
+		std::string(callback_data->pMessage));
+
 	return VK_FALSE;
 }
 #endif
