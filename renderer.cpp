@@ -213,15 +213,15 @@ bool Renderer::init(std::string& out_error_message)
 void Renderer::destroy()
 {
 #ifdef _DEBUG
-	if (m_vk_debug_messenger != nullptr) {
+	if (m_vk_debug_messenger != VK_NULL_HANDLE) {
 		vkDestroyDebugUtilsMessengerEXT(m_vk_instance, m_vk_debug_messenger, nullptr);
-		m_vk_debug_messenger = nullptr;
+		m_vk_debug_messenger = VK_NULL_HANDLE;
 	}
 #endif
 
-	if (m_vk_instance != nullptr) {
+	if (m_vk_instance != VK_NULL_HANDLE) {
 		vkDestroyInstance(m_vk_instance, nullptr);
-		m_vk_instance = nullptr;
+		m_vk_instance = VK_NULL_HANDLE;
 	}
 
 	m_logger.requestStop();

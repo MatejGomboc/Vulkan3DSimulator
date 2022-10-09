@@ -29,9 +29,9 @@ namespace Simulator {
 
 		bool m_initialized = false;
 		Logger m_logger;
-		VkInstance m_vk_instance = nullptr;
+		VkInstance m_vk_instance = VK_NULL_HANDLE;
 #ifdef _DEBUG
-		VkDebugUtilsMessengerEXT m_vk_debug_messenger = nullptr;
+		VkDebugUtilsMessengerEXT m_vk_debug_messenger = VK_NULL_HANDLE;
 #endif
 	};
 }
