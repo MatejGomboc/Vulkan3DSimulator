@@ -2,72 +2,6 @@
 
 using namespace Simulator;
 
-#ifdef _DEBUG
-bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
-{
-	uint32_t supported_layers_count;
-	VkResult error = vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr);
-	if (error != VK_SUCCESS) {
-		return false;
-	}
-
-	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
-	error = vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data());
-	if (error != VK_SUCCESS) {
-		return false;
-	}
-
-	for (const char* layer : layers) {
-		bool found = false;
-
-		for (const VkLayerProperties& supported_layer : supported_layers) {
-			if (std::string(layer) == std::string(supported_layer.layerName)) {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			return false;
-		}
-	}
-
-	return true;
-}
-#endif
-
-bool Renderer::areExtensionsSupported(const std::vector<const char*>& extensions)
-{
-	uint32_t supported_extensions_count;
-	VkResult error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, nullptr);
-	if (error != VK_SUCCESS) {
-		return false;
-	}
-
-	std::vector<VkExtensionProperties> supported_extensions(supported_extensions_count);
-	error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, supported_extensions.data());
-	if (error != VK_SUCCESS) {
-		return false;
-	}
-
-	for (const char* extension : extensions) {
-		bool found = false;
-
-		for (const VkExtensionProperties& supported_extension : supported_extensions) {
-			if (std::string(extension) == std::string(supported_extension.extensionName)) {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 Renderer::~Renderer()
 {
 	destroy();
@@ -227,6 +161,124 @@ void Renderer::destroy()
 	m_logger.requestStop();
 	m_logger.waitForStop();
 	m_initialized = false;
+}
+
+bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_devices, std::string& out_error_message)
+{
+	if (!m_initialized) {
+		out_error_message = "Renderer not initialized.";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		return false;
+	}
+
+	uint32_t devices_count;
+	VkResult vk_error = vkEnumeratePhysicalDevices(m_vk_instance, &devices_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate physical devices. VK error:" + std::to_string(vk_error) + ".";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		return false;
+	}
+
+	if (devices_count == 0) {
+		return true;
+	}
+
+	std::vector<VkPhysicalDevice> devices(devices_count);
+	vk_error = vkEnumeratePhysicalDevices(m_vk_instance, &devices_count, devices.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate physical devices. VK error:" + std::to_string(vk_error) + ".";
+		m_logger.logWrite("[ERROR] " + out_error_message);
+		return false;
+	}
+
+	for (const VkPhysicalDevice& device : devices) {
+		//VkPhysicalDeviceProperties device_properties;
+		//vkGetPhysicalDeviceProperties(device, &device_properties);
+
+		//VkPhysicalDeviceFeatures device_features;
+		//vkGetPhysicalDeviceFeatures(device, &device_features);
+
+		uint32_t queue_families_count;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_families_count, nullptr);
+
+		std::vector<VkQueueFamilyProperties> queue_families_props(queue_families_count);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_families_count, queue_families_props.data());
+
+		for (const VkQueueFamilyProperties& queue_family_props : queue_families_props) {
+			if (queue_family_props.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				out_supported_devices.push_back(device);
+				break;
+			}
+		}
+	}
+
+	return true;
+}
+
+#ifdef _DEBUG
+bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
+{
+	uint32_t supported_layers_count;
+	VkResult error = vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr);
+	if (error != VK_SUCCESS) {
+		return false;
+	}
+
+	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
+	error = vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data());
+	if (error != VK_SUCCESS) {
+		return false;
+	}
+
+	for (const char* layer : layers) {
+		bool found = false;
+
+		for (const VkLayerProperties& supported_layer : supported_layers) {
+			if (std::string(layer) == std::string(supported_layer.layerName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif
+
+bool Renderer::areExtensionsSupported(const std::vector<const char*>& extensions)
+{
+	uint32_t supported_extensions_count;
+	VkResult error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, nullptr);
+	if (error != VK_SUCCESS) {
+		return false;
+	}
+
+	std::vector<VkExtensionProperties> supported_extensions(supported_extensions_count);
+	error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, supported_extensions.data());
+	if (error != VK_SUCCESS) {
+		return false;
+	}
+
+	for (const char* extension : extensions) {
+		bool found = false;
+
+		for (const VkExtensionProperties& supported_extension : supported_extensions) {
+			if (std::string(extension) == std::string(supported_extension.extensionName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 #ifdef _DEBUG

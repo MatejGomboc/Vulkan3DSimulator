@@ -1,6 +1,7 @@
 #include <SDKDDKVer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <CommCtrl.h>
 #include <cstdlib>
 #include "renderer.h"
 
@@ -10,6 +11,35 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 {
 	switch (message) {
 	case WM_CREATE: {
+		auto create_info = reinterpret_cast<CREATESTRUCTA*>(lparam);
+
+		HWND devices_combobox = CreateWindow(WC_COMBOBOX, TEXT("DevicesCombobox"),
+			CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+			0, 0, 1000, 1000, window, nullptr, create_info->hInstance, nullptr);
+
+		if (devices_combobox == nullptr) {
+			MessageBoxA(nullptr, "Cannot create devices combo box.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
+			return -1;
+		}
+
+		LRESULT error = SendMessage(devices_combobox, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(TEXT("1")));
+		if ((error == CB_ERR) || (error == CB_ERRSPACE)) {
+			MessageBoxA(nullptr, "Cannot create devices combo box.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
+			return -1;
+		}
+
+		error = SendMessage(devices_combobox, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(TEXT("2")));
+		if ((error == CB_ERR) || (error == CB_ERRSPACE)) {
+			MessageBoxA(nullptr, "Cannot create devices combo box.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
+			return -1;
+		}
+
+		/*error = SendMessage(devices_combobox, CB_SETCURSEL, 0, 0);
+		if ((error == CB_ERR) || (error == CB_ERRSPACE)) {
+			MessageBoxA(nullptr, "Cannot create devices combo box.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
+			return -1;
+		}*/
+
 		return 0;
 	}
 	case WM_CLOSE: {
@@ -57,7 +87,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE app_instance, _In_opt_ HINSTANCE prev_app_i
 	}
 
 	HWND window = CreateWindow(TEXT("MainWindow"), TEXT("Simulator"), WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, app_instance, nullptr);
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, app_instance, nullptr);
 
 	if (window == nullptr) {
 		MessageBoxA(nullptr, "Cannot create main window.", "ERROR", MB_ICONERROR | MB_OK | MB_APPLMODAL);
