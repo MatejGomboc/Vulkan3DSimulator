@@ -38,7 +38,7 @@ bool Renderer::init(std::string& out_error_message)
 
 	if ((VK_API_VERSION_VARIANT(vk_version) != 0) ||
 		(VK_API_VERSION_MAJOR(vk_version) != 1) ||
-		(VK_API_VERSION_MINOR(vk_version) > 3)) {
+		(VK_API_VERSION_MINOR(vk_version) < 3)) {
 		out_error_message = "Unsupported Vulkan version:" +
 			std::to_string(VK_API_VERSION_MAJOR(vk_version)) +
 			"." + std::to_string(VK_API_VERSION_MINOR(vk_version)) +
@@ -80,14 +80,15 @@ bool Renderer::init(std::string& out_error_message)
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.pNext = nullptr;
 	app_info.pApplicationName = "Simulator";
-	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 	app_info.pEngineName = "none";
-	app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	app_info.apiVersion = VK_API_VERSION_1_0;
+	app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
+	app_info.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 
 #ifdef _DEBUG
 	VkDebugUtilsMessengerCreateInfoEXT debug_messenger_info{};
-	debug_messenger_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	debug_messenger_info.sType =
+		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	debug_messenger_info.messageSeverity =
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
