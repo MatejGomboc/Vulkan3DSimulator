@@ -1,3 +1,4 @@
 Simulator.vcxproj.user
-x64
 .vs
+bin
+obj
