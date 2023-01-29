@@ -7,23 +7,22 @@ Renderer::~Renderer()
 	destroy();
 }
 
-bool Renderer::init(std::string& out_error_message)
+bool Renderer::init(
+	std::string& out_error_message
+#ifdef _DEBUG
+	, PFN_vkDebugUtilsMessengerCallbackEXT debug_callback,
+	void* debug_callback_user_data
+#endif
+)
 {
-	if (!m_logger.start("renderer_log.txt", out_error_message)) {
-		destroy();
-		return false;
-	}
-
 	if (m_initialized) {
 		out_error_message = "Renderer already initialized.";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
 
 	if (volkInitialize() != VK_SUCCESS) {
 		out_error_message = "Vulkan not found on this system.";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -31,7 +30,6 @@ bool Renderer::init(std::string& out_error_message)
 	uint32_t vk_version = volkGetInstanceVersion();
 	if (vk_version == 0) {
 		out_error_message = "Failed to get Vulkan version.";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -44,7 +42,6 @@ bool Renderer::init(std::string& out_error_message)
 			"." + std::to_string(VK_API_VERSION_MINOR(vk_version)) +
 			"." + std::to_string(VK_API_VERSION_PATCH(vk_version)) +
 			":" + std::to_string(VK_API_VERSION_VARIANT(vk_version));
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -55,7 +52,6 @@ bool Renderer::init(std::string& out_error_message)
 
 	if (!areLayersSupported(vk_layers)) {
 		out_error_message = "The necessary Vulkan layers are not supported.";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -71,7 +67,6 @@ bool Renderer::init(std::string& out_error_message)
 
 	if (!areExtensionsSupported(vk_extensions)) {
 		out_error_message = "The necessary Vulkan extensions are not supported.";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -98,8 +93,8 @@ bool Renderer::init(std::string& out_error_message)
 		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	debug_messenger_info.pfnUserCallback = debugCallback;
-	debug_messenger_info.pUserData = &m_logger;
+	debug_messenger_info.pfnUserCallback = debug_callback;
+	debug_messenger_info.pUserData = debug_callback_user_data;
 #endif
 
 	VkInstanceCreateInfo inst_info{};
@@ -124,7 +119,6 @@ bool Renderer::init(std::string& out_error_message)
 	VkResult vk_error = vkCreateInstance(&inst_info, nullptr, &m_vk_instance);
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to create Vulkan instance. VK error:" + std::to_string(vk_error) + ".";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -135,7 +129,6 @@ bool Renderer::init(std::string& out_error_message)
 	vk_error = vkCreateDebugUtilsMessengerEXT(m_vk_instance, &debug_messenger_info, nullptr, &m_vk_debug_messenger);
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to create Vulkan debug messenger. VK error:" + std::to_string(vk_error) + ".";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		destroy();
 		return false;
 	}
@@ -159,8 +152,6 @@ void Renderer::destroy()
 		m_vk_instance = VK_NULL_HANDLE;
 	}
 
-	m_logger.requestStop();
-	m_logger.waitForStop();
 	m_initialized = false;
 }
 
@@ -168,7 +159,6 @@ bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_
 {
 	if (!m_initialized) {
 		out_error_message = "Renderer not initialized.";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		return false;
 	}
 
@@ -176,7 +166,6 @@ bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_
 	VkResult vk_error = vkEnumeratePhysicalDevices(m_vk_instance, &devices_count, nullptr);
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to enumerate physical devices. VK error:" + std::to_string(vk_error) + ".";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		return false;
 	}
 
@@ -188,7 +177,6 @@ bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_
 	vk_error = vkEnumeratePhysicalDevices(m_vk_instance, &devices_count, devices.data());
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to enumerate physical devices. VK error:" + std::to_string(vk_error) + ".";
-		m_logger.logWrite("[ERROR] " + out_error_message);
 		return false;
 	}
 
@@ -281,50 +269,3 @@ bool Renderer::areExtensionsSupported(const std::vector<const char*>& extensions
 
 	return true;
 }
-
-#ifdef _DEBUG
-VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::debugCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-	VkDebugUtilsMessageTypeFlagsEXT message_type,
-	const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-	void* user_data)
-{
-	std::string severity_str;
-	if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-		severity_str = "[ERROR]";
-	}
-	else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-		severity_str = "[WARNING]";
-	}
-	else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-		severity_str = "[INFO]";
-	}
-	else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-		severity_str = "[VERBOSE]";
-	}
-	else {
-		severity_str = "[UNKNOWN]";
-	}
-
-	std::string type_str = "[";
-	if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
-		type_str += "PERFORMANCE,";
-	}
-	if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-		type_str += "VALIDATION,";
-	}
-	if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
-		type_str += "GENERAL,";
-	}
-	if (type_str.size() > 1) {
-		type_str.pop_back();
-	}
-	type_str += "]";
-
-	auto logger = static_cast<Logger*>(user_data);
-	logger->logWrite("[LAYER] " + severity_str + " " + type_str + " " +
-		std::string(callback_data->pMessage));
-
-	return VK_FALSE;
-}
-#endif
