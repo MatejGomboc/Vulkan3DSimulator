@@ -9,14 +9,7 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 	switch (message) {
 	case WM_CREATE: {
 		auto create_info = reinterpret_cast<CREATESTRUCTA*>(lparam);
-		if (create_info == nullptr) {
-			return -1;
-		}
-
 		auto renderer = reinterpret_cast<Simulator::Renderer*>(create_info->lpCreateParams);
-		if (renderer == nullptr) {
-			return -1;
-		}
 
 		SetLastError(0);
 		if (SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(renderer)) != 0) {
