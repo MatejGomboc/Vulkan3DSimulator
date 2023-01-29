@@ -3,7 +3,6 @@
 #include <Volk/volk.h>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace Simulator {
 	class Renderer {
