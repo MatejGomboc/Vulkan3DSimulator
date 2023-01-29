@@ -11,8 +11,8 @@ namespace Simulator {
 		bool init(
 			std::string& out_error_message
 #ifdef _DEBUG
-			, PFN_vkDebugUtilsMessengerCallbackEXT debug_callback,
-			void* debug_callback_user_data
+			, PFN_vkDebugUtilsMessengerCallbackEXT vulkan_debug_callback,
+			void* vulkan_debug_callback_user_data
 #endif
 		);
 

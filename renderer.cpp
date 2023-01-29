@@ -10,8 +10,8 @@ Renderer::~Renderer()
 bool Renderer::init(
 	std::string& out_error_message
 #ifdef _DEBUG
-	, PFN_vkDebugUtilsMessengerCallbackEXT debug_callback,
-	void* debug_callback_user_data
+	, PFN_vkDebugUtilsMessengerCallbackEXT vulkan_debug_callback,
+	void* vulkan_debug_callback_user_data
 #endif
 )
 {
@@ -93,8 +93,8 @@ bool Renderer::init(
 		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	debug_messenger_info.pfnUserCallback = debug_callback;
-	debug_messenger_info.pUserData = debug_callback_user_data;
+	debug_messenger_info.pfnUserCallback = vulkan_debug_callback;
+	debug_messenger_info.pUserData = vulkan_debug_callback_user_data;
 #endif
 
 	VkInstanceCreateInfo inst_info{};
