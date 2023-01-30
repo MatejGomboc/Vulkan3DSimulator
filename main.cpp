@@ -85,6 +85,12 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 			return -1;
 		}
 
+		std::vector<VkPhysicalDevice> out_supported_devices;
+		if (!user_data->renderer.getSupportedDevices(out_supported_devices, out_error_message)) {
+			user_data->logger.logWrite("[ERROR] " + out_error_message);
+			return -1;
+		}
+
 		return 0;
 	}
 	case WM_DESTROY: {
