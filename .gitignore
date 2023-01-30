@@ -1,4 +1,5 @@
-Simulator.vcxproj.user
-.vs
-bin
-obj
+/Simulator.vcxproj.user
+/.vs
+/bin
+/obj
+/log.txt
