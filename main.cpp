@@ -76,12 +76,11 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 		}
 
 		std::string out_error_message;
-		if (!user_data->renderer.init(
-			out_error_message,
 #ifdef _DEBUG
-			vulkanDebugCallback, &(user_data->logger)
+		if (!user_data->renderer.init(out_error_message, vulkanDebugCallback, &(user_data->logger))) {
+#else
+		if (!user_data->renderer.init(out_error_message)) {
 #endif
-		)) {
 			user_data->logger.logWrite("[ERROR] " + out_error_message);
 			return -1;
 		}
