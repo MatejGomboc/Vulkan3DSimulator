@@ -85,10 +85,17 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 			return -1;
 		}
 
-		std::vector<VkPhysicalDevice> out_supported_devices;
-		if (!user_data->renderer.getSupportedDevices(out_supported_devices, out_error_message)) {
+		std::vector<VkPhysicalDevice> out_supported_vk_physical_devices;
+		if (!user_data->renderer.getSupportedDevices(out_supported_vk_physical_devices, out_error_message)) {
 			user_data->logger.logWrite("[ERROR] " + out_error_message);
 			return -1;
+		}
+
+		user_data->logger.logWrite("[INFO] Found supported Vulkan physical devices:");
+		for (const VkPhysicalDevice& vk_physical_device : out_supported_vk_physical_devices) {
+			VkPhysicalDeviceProperties vk_physical_device_properties;
+			vkGetPhysicalDeviceProperties(vk_physical_device, &vk_physical_device_properties);
+			user_data->logger.logWrite("[INFO] \"" + std::string(vk_physical_device_properties.deviceName) + "\".");
 		}
 
 		return 0;
