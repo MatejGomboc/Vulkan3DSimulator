@@ -52,8 +52,7 @@ bool Renderer::init(
 	std::vector<const char*> vk_layers;
 	vk_layers.push_back("VK_LAYER_KHRONOS_validation");
 
-	if (!areLayersSupported(vk_layers)) {
-		out_error_message = "The necessary Vulkan layers are not supported.";
+	if (!areLayersSupported(vk_layers, out_error_message)) {
 		destroy();
 		return false;
 	}
@@ -69,8 +68,7 @@ bool Renderer::init(
 #endif
 	};
 
-	if (!areExtensionsSupported(vk_extensions)) {
-		out_error_message = "The necessary Vulkan extensions are not supported.";
+	if (!areExtensionsSupported(vk_extensions, out_error_message)) {
 		destroy();
 		return false;
 	}
@@ -190,57 +188,96 @@ bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_
 	uint32_t devices_count;
 	VkResult vk_error = vkEnumeratePhysicalDevices(m_vk_instance, &devices_count, nullptr);
 	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate physical devices. VK error:" + std::to_string(vk_error) + ".";
+		out_error_message = "Failed to enumerate Vulkan physical devices. VK error:" + std::to_string(vk_error) + ".";
 		return false;
 	}
 
 	if (devices_count == 0) {
-		return true;
+		out_error_message = "No Vulkan physical devices found.";
+		return false;
 	}
 
 	std::vector<VkPhysicalDevice> devices(devices_count);
 	vk_error = vkEnumeratePhysicalDevices(m_vk_instance, &devices_count, devices.data());
 	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate physical devices. VK error:" + std::to_string(vk_error) + ".";
+		out_error_message = "Failed to enumerate Vulkan physical devices. VK error:" + std::to_string(vk_error) + ".";
 		return false;
 	}
 
 	for (const VkPhysicalDevice& device : devices) {
-		//VkPhysicalDeviceProperties device_properties;
-		//vkGetPhysicalDeviceProperties(device, &device_properties);
-
-		//VkPhysicalDeviceFeatures device_features;
-		//vkGetPhysicalDeviceFeatures(device, &device_features);
+		VkPhysicalDeviceProperties device_properties;
+		vkGetPhysicalDeviceProperties(device, &device_properties);
 
 		uint32_t queue_families_count;
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_families_count, nullptr);
 
+		if (queue_families_count == 0) {
+			out_supported_devices.clear();
+			out_error_message = "No Vulkan queue families found for device \"" + std::string(device_properties.deviceName) + "\".";
+			return false;
+		}
+
 		std::vector<VkQueueFamilyProperties> queue_families_props(queue_families_count);
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_families_count, queue_families_props.data());
 
-		for (const VkQueueFamilyProperties& queue_family_props : queue_families_props) {
-			if (queue_family_props.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				out_supported_devices.push_back(device);
+		bool graphics_queue_family_found = false;
+		bool present_queue_family_found = false;
+
+		for (uint32_t i = 0; i < queue_families_props.size(); i++) {
+			if (queue_families_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				graphics_queue_family_found = true;
+			}
+
+			VkBool32 supported = false;
+			vk_error = vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_vk_surface, &supported);
+			if (vk_error != VK_SUCCESS) {
+				out_supported_devices.clear();
+				out_error_message = "Failed to query Vulkan physical device \"" + std::string(device_properties.deviceName) +
+					"\" for presentation support. VK error:" + std::to_string(vk_error) + ".";
+				return false;
+			}
+
+			if (supported) {
+				present_queue_family_found = true;
+			}
+
+			if (graphics_queue_family_found && present_queue_family_found) {
 				break;
 			}
 		}
+
+		if (graphics_queue_family_found && present_queue_family_found) {
+			out_supported_devices.push_back(device);
+		}
+	}
+
+	if (out_supported_devices.empty()) {
+		out_error_message = "No supported Vulkan physical devices found.";
+		return false;
 	}
 
 	return true;
 }
 
 #ifdef DEBUG
-bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
+bool Renderer::areLayersSupported(const std::vector<const char*>& layers, std::string& out_error_message)
 {
 	uint32_t supported_layers_count;
-	VkResult error = vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr);
-	if (error != VK_SUCCESS) {
+	VkResult vk_error = vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan layers. VK error:" + std::to_string(vk_error) + ".";
+		return false;
+	}
+
+	if (supported_layers_count == 0) {
+		out_error_message = "No Vulkan layers found.";
 		return false;
 	}
 
 	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
-	error = vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data());
-	if (error != VK_SUCCESS) {
+	vk_error = vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan layers. VK error:" + std::to_string(vk_error) + ".";
 		return false;
 	}
 
@@ -255,6 +292,7 @@ bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
 		}
 
 		if (!found) {
+			out_error_message = "Vulkan layer \"" + std::string(layer) + "\" not supported.";
 			return false;
 		}
 	}
@@ -263,17 +301,24 @@ bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
 }
 #endif
 
-bool Renderer::areExtensionsSupported(const std::vector<const char*>& extensions)
+bool Renderer::areExtensionsSupported(const std::vector<const char*>& extensions, std::string& out_error_message)
 {
 	uint32_t supported_extensions_count;
-	VkResult error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, nullptr);
-	if (error != VK_SUCCESS) {
+	VkResult vk_error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan instance extensions. VK error:" + std::to_string(vk_error) + ".";
+		return false;
+	}
+
+	if (supported_extensions_count == 0) {
+		out_error_message = "No Vulkan instance extensions found.";
 		return false;
 	}
 
 	std::vector<VkExtensionProperties> supported_extensions(supported_extensions_count);
-	error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, supported_extensions.data());
-	if (error != VK_SUCCESS) {
+	vk_error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, supported_extensions.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan instance extensions. VK error:" + std::to_string(vk_error) + ".";
 		return false;
 	}
 
@@ -288,6 +333,7 @@ bool Renderer::areExtensionsSupported(const std::vector<const char*>& extensions
 		}
 
 		if (!found) {
+			out_error_message = "Vulkan instance extension \"" + std::string(extension) + "\" not supported.";
 			return false;
 		}
 	}

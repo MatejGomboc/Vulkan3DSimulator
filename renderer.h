@@ -22,9 +22,9 @@ namespace Simulator {
 
 	private:
 #ifdef DEBUG
-		static bool areLayersSupported(const std::vector<const char*>& layers);
+		static bool areLayersSupported(const std::vector<const char*>& layers, std::string& out_error_message);
 #endif
-		static bool areExtensionsSupported(const std::vector<const char*>& extensions);
+		static bool areExtensionsSupported(const std::vector<const char*>& extensions, std::string& out_error_message);
 
 		bool m_initialized = false;
 		VkInstance m_vk_instance = VK_NULL_HANDLE;
