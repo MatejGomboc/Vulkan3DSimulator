@@ -17,12 +17,8 @@ namespace Simulator {
 			, HINSTANCE app_instance, HWND window
 #endif
 		);
-
 		void destroy();
-		bool getSupportedDevices(
-			std::vector<VkPhysicalDevice>& out_supported_devices,
-			std::string& out_error_message
-		);
+		bool getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_devices, std::string& out_error_message);
 
 	private:
 #ifdef DEBUG
