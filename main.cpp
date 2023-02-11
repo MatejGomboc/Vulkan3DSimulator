@@ -86,7 +86,7 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 		}
 
 		std::vector<VkPhysicalDevice> out_supported_vk_physical_devices;
-		if (!user_data->renderer.getSupportedDevices(out_supported_vk_physical_devices, out_error_message)) {
+		if (!user_data->renderer.getSupportedPhysicalDevices(out_supported_vk_physical_devices, out_error_message)) {
 			user_data->logger.logWrite("[ERROR] " + out_error_message);
 			return -1;
 		}
@@ -97,6 +97,15 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 			vkGetPhysicalDeviceProperties(vk_physical_device, &vk_physical_device_properties);
 			user_data->logger.logWrite("[INFO] \"" + std::string(vk_physical_device_properties.deviceName) + "\".");
 		}
+
+		if (!user_data->renderer.createLogicalDevice(out_supported_vk_physical_devices[0], out_error_message)) {
+			user_data->logger.logWrite("[ERROR] " + out_error_message);
+			return -1;
+		}
+
+		VkPhysicalDeviceProperties vk_physical_device_properties;
+		vkGetPhysicalDeviceProperties(out_supported_vk_physical_devices[0], &vk_physical_device_properties);
+		user_data->logger.logWrite("[INFO] Selected \"" + std::string(vk_physical_device_properties.deviceName) + "\" for rendering.");
 
 		return 0;
 	}
