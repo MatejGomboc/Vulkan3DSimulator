@@ -127,7 +127,7 @@ bool Renderer::init(
 		return false;
 	}
 
-	volkLoadInstance(m_vk_instance);
+	volkLoadInstanceOnly(m_vk_instance);
 
 #ifdef DEBUG
 	vk_error = vkCreateDebugUtilsMessengerEXT(m_vk_instance, &debug_messenger_info, nullptr, &m_vk_debug_messenger);
