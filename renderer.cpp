@@ -213,7 +213,7 @@ bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_
 
 		if (queue_families_count == 0) {
 			out_supported_devices.clear();
-			out_error_message = "No Vulkan queue families found for device \"" + std::string(device_properties.deviceName) + "\".";
+			out_error_message = "No Vulkan queue families found for physical device \"" + std::string(device_properties.deviceName) + "\".";
 			return false;
 		}
 
