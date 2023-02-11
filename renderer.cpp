@@ -9,9 +9,11 @@ Renderer::~Renderer()
 
 bool Renderer::init(
 	std::string& out_error_message
-#ifdef _DEBUG
-	, PFN_vkDebugUtilsMessengerCallbackEXT vulkan_debug_callback,
-	void* vulkan_debug_callback_user_data
+#ifdef DEBUG
+	, PFN_vkDebugUtilsMessengerCallbackEXT vulkan_debug_callback, void* vulkan_debug_callback_user_data
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+	, HINSTANCE app_instance, HWND window
 #endif
 )
 {
@@ -46,7 +48,7 @@ bool Renderer::init(
 		return false;
 	}
 
-#ifdef _DEBUG
+#ifdef DEBUG
 	std::vector<const char*> vk_layers;
 	vk_layers.push_back("VK_LAYER_KHRONOS_validation");
 
@@ -58,9 +60,11 @@ bool Renderer::init(
 #endif
 
 	std::vector<const char*> vk_extensions = {
-		 VK_KHR_SURFACE_EXTENSION_NAME,
-		 VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-#ifdef _DEBUG
+		 VK_KHR_SURFACE_EXTENSION_NAME
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+		 , VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#endif
+#ifdef DEBUG
 		 , VK_EXT_DEBUG_UTILS_EXTENSION_NAME
 #endif
 	};
@@ -80,7 +84,7 @@ bool Renderer::init(
 	app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 	app_info.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 
-#ifdef _DEBUG
+#ifdef DEBUG
 	VkDebugUtilsMessengerCreateInfoEXT debug_messenger_info{};
 	debug_messenger_info.sType =
 		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -99,14 +103,14 @@ bool Renderer::init(
 
 	VkInstanceCreateInfo inst_info{};
 	inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-#ifdef _DEBUG
+#ifdef DEBUG
 	inst_info.pNext = &debug_messenger_info;
 #else
 	inst_info.pNext = nullptr;
 #endif
 	inst_info.flags = 0;
 	inst_info.pApplicationInfo = &app_info;
-#ifdef _DEBUG
+#ifdef DEBUG
 	inst_info.enabledLayerCount = static_cast<uint32_t>(vk_layers.size());
 	inst_info.ppEnabledLayerNames = vk_layers.data();
 #else
@@ -125,10 +129,26 @@ bool Renderer::init(
 
 	volkLoadInstance(m_vk_instance);
 
-#ifdef _DEBUG
+#ifdef DEBUG
 	vk_error = vkCreateDebugUtilsMessengerEXT(m_vk_instance, &debug_messenger_info, nullptr, &m_vk_debug_messenger);
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to create Vulkan debug messenger. VK error:" + std::to_string(vk_error) + ".";
+		destroy();
+		return false;
+	}
+#endif
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+	VkWin32SurfaceCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.pNext = nullptr;
+	createInfo.flags = 0;
+	createInfo.hinstance = app_instance;
+	createInfo.hwnd = window;
+
+	vk_error = vkCreateWin32SurfaceKHR(m_vk_instance, &createInfo, nullptr, &m_vk_surface);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to create Vulkan rendering surface. VK error:" + std::to_string(vk_error) + ".";
 		destroy();
 		return false;
 	}
@@ -140,8 +160,13 @@ bool Renderer::init(
 
 void Renderer::destroy()
 {
-#ifdef _DEBUG
-	if (m_vk_debug_messenger != VK_NULL_HANDLE) {
+	if ((m_vk_instance != VK_NULL_HANDLE) && (m_vk_surface != VK_NULL_HANDLE)) {
+		vkDestroySurfaceKHR(m_vk_instance, m_vk_surface, nullptr);
+		m_vk_surface = VK_NULL_HANDLE;
+	}
+
+#ifdef DEBUG
+	if ((m_vk_instance != VK_NULL_HANDLE) && (m_vk_debug_messenger != VK_NULL_HANDLE)) {
 		vkDestroyDebugUtilsMessengerEXT(m_vk_instance, m_vk_debug_messenger, nullptr);
 		m_vk_debug_messenger = VK_NULL_HANDLE;
 	}
@@ -204,7 +229,7 @@ bool Renderer::getSupportedDevices(std::vector<VkPhysicalDevice>& out_supported_
 	return true;
 }
 
-#ifdef _DEBUG
+#ifdef DEBUG
 bool Renderer::areLayersSupported(const std::vector<const char*>& layers)
 {
 	uint32_t supported_layers_count;

@@ -10,7 +10,7 @@ struct MainWindowUserData {
 	Simulator::Renderer renderer;
 };
 
-#ifdef _DEBUG
+#ifdef DEBUG
 VkBool32 VKAPI_PTR vulkanDebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
 	VkDebugUtilsMessageTypeFlagsEXT message_type,
@@ -76,10 +76,10 @@ static LRESULT CALLBACK wndProc(HWND window, UINT message, WPARAM wparam, LPARAM
 		}
 
 		std::string out_error_message;
-#ifdef _DEBUG
-		if (!user_data->renderer.init(out_error_message, vulkanDebugCallback, &(user_data->logger))) {
+#ifdef DEBUG
+		if (!user_data->renderer.init(out_error_message, vulkanDebugCallback, &(user_data->logger), create_info->hInstance, window)) {
 #else
-		if (!user_data->renderer.init(out_error_message)) {
+		if (!user_data->renderer.init(out_error_message, create_info->hInstance, window)) {
 #endif
 			user_data->logger.logWrite("[ERROR] " + out_error_message);
 			return -1;
