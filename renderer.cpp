@@ -138,14 +138,14 @@ bool Renderer::init(
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-	VkWin32SurfaceCreateInfoKHR createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.pNext = nullptr;
-	createInfo.flags = 0;
-	createInfo.hinstance = app_instance;
-	createInfo.hwnd = window;
+	VkWin32SurfaceCreateInfoKHR create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	create_info.pNext = nullptr;
+	create_info.flags = 0;
+	create_info.hinstance = app_instance;
+	create_info.hwnd = window;
 
-	vk_error = vkCreateWin32SurfaceKHR(m_vk_instance, &createInfo, nullptr, &m_vk_surface);
+	vk_error = vkCreateWin32SurfaceKHR(m_vk_instance, &create_info, nullptr, &m_vk_surface);
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to create Vulkan rendering surface. VK error:" + std::to_string(vk_error) + ".";
 		destroy();
