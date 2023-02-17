@@ -27,6 +27,7 @@ namespace Simulator {
 		static bool areDeviceLayersSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& layers, std::string& out_error_message);
 #endif
 		static bool areInstanceExtensionsSupported(const std::vector<const char*>& extensions, std::string& out_error_message);
+		static bool areDeviceExtensionsSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& extensions, std::string& out_error_message);
 
 #ifdef DEBUG
 		static constexpr const char* const VK_LAYER_KHRONOS_VALIDATION_NAME = "VK_LAYER_KHRONOS_validation";

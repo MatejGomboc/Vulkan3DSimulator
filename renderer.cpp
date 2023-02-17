@@ -421,22 +421,27 @@ bool Renderer::areInstanceLayersSupported(const std::vector<const char*>& layers
 
 bool Renderer::areDeviceLayersSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& layers, std::string& out_error_message)
 {
+	VkPhysicalDeviceProperties device_properties;
+	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
+
 	uint32_t supported_layers_count;
 	VkResult vk_error = vkEnumerateDeviceLayerProperties(physical_device, &supported_layers_count, nullptr);
 	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate Vulkan device layers. VK error:" + std::to_string(vk_error) + ".";
+		out_error_message = "Failed to enumerate layers for Vulkan physical device: \"" + std::string(device_properties.deviceName) + "\". "
+			"VK error:" + std::to_string(vk_error) + ".";
 		return false;
 	}
 
 	if (supported_layers_count == 0) {
-		out_error_message = "No Vulkan layers found.";
+		out_error_message = "No layers found for Vulkan physical device: \"" + std::string(device_properties.deviceName) + "\".";
 		return false;
 	}
 
 	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
 	vk_error = vkEnumerateDeviceLayerProperties(physical_device, &supported_layers_count, supported_layers.data());
 	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate Vulkan device layers. VK error:" + std::to_string(vk_error) + ".";
+		out_error_message = "Failed to enumerate layers for Vulkan physical device: \"" + std::string(device_properties.deviceName) + "\". "
+			"VK error:" + std::to_string(vk_error) + ".";
 		return false;
 	}
 
@@ -451,7 +456,8 @@ bool Renderer::areDeviceLayersSupported(const VkPhysicalDevice& physical_device,
 		}
 
 		if (!found) {
-			out_error_message = "Vulkan device layer \"" + std::string(layer) + "\" not supported.";
+			out_error_message = "Layer \"" + std::string(layer) + "\" not supported for Vulkan physical device: \"" +
+				std::string(device_properties.deviceName) + "\".";
 			return false;
 		}
 	}
@@ -493,6 +499,52 @@ bool Renderer::areInstanceExtensionsSupported(const std::vector<const char*>& ex
 
 		if (!found) {
 			out_error_message = "Vulkan instance extension \"" + std::string(extension) + "\" not supported.";
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Simulator::Renderer::areDeviceExtensionsSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& extensions, std::string& out_error_message)
+{
+	VkPhysicalDeviceProperties device_properties;
+	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
+
+	uint32_t supported_extensions_count;
+	VkResult vk_error = vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &supported_extensions_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate extensions for Vulkan physical device: \"" + std::string(device_properties.deviceName) + "\". "
+			"VK error:" + std::to_string(vk_error) + ".";
+		return false;
+	}
+
+	if (supported_extensions_count == 0) {
+		out_error_message = "No device extensions found for for Vulkan physical device: \"" + std::string(device_properties.deviceName) + "\".";
+		return false;
+	}
+
+	std::vector<VkExtensionProperties> supported_extensions(supported_extensions_count);
+	vk_error = vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &supported_extensions_count, supported_extensions.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate extensions for Vulkan physical device: \"" + std::string(device_properties.deviceName) + "\". "
+			"VK error:" + std::to_string(vk_error) + ".";
+		return false;
+	}
+
+	for (const char* const extension : extensions) {
+		bool found = false;
+
+		for (const VkExtensionProperties& supported_extension : supported_extensions) {
+			if (std::string(extension) == std::string(supported_extension.extensionName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			out_error_message = "Extension \"" + std::string(extension) + "\" not supported for Vulkan physical device: \"" +
+				std::string(device_properties.deviceName) + "\".";
 			return false;
 		}
 	}
