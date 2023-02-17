@@ -506,7 +506,7 @@ bool Renderer::areInstanceExtensionsSupported(const std::vector<const char*>& ex
 	return true;
 }
 
-bool Simulator::Renderer::areDeviceExtensionsSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& extensions, std::string& out_error_message)
+bool Renderer::areDeviceExtensionsSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& extensions, std::string& out_error_message)
 {
 	VkPhysicalDeviceProperties device_properties;
 	vkGetPhysicalDeviceProperties(physical_device, &device_properties);
