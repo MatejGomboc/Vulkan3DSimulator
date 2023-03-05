@@ -90,7 +90,7 @@ bool Renderer::init(
 	}
 #endif
 
-	std::vector<const char*> vk_extensions{
+	std::vector<const char*> instance_extensions{
 		 VK_KHR_SURFACE_EXTENSION_NAME,
 		 VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 #ifdef DEBUG
@@ -98,9 +98,43 @@ bool Renderer::init(
 #endif
 	};
 
-	if (!areInstanceExtensionsSupported(vk_extensions, out_error_message)) {
+	uint32_t supported_instance_extensions_count;
+	vk_error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_instance_extensions_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan instance extensions. VK error:" + std::to_string(vk_error) + ".";
 		destroy();
 		return false;
+	}
+
+	if (supported_instance_extensions_count == 0) {
+		out_error_message = "No Vulkan instance extensions found.";
+		destroy();
+		return false;
+	}
+
+	std::vector<VkExtensionProperties> supported_instance_extensions(supported_instance_extensions_count);
+	vk_error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_instance_extensions_count, supported_instance_extensions.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan instance extensions. VK error:" + std::to_string(vk_error) + ".";
+		destroy();
+		return false;
+	}
+
+	for (const char* const instance_extension : instance_extensions) {
+		bool found = false;
+
+		for (const VkExtensionProperties& supported_instance_extension : supported_instance_extensions) {
+			if (std::string(instance_extension) == std::string(supported_instance_extension.extensionName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			out_error_message = "Vulkan instance extension \"" + std::string(instance_extension) + "\" not supported.";
+			destroy();
+			return false;
+		}
 	}
 
 	VkApplicationInfo app_info{};
@@ -145,8 +179,8 @@ bool Renderer::init(
 	inst_info.enabledLayerCount = 0;
 	inst_info.ppEnabledLayerNames = nullptr;
 #endif
-	inst_info.enabledExtensionCount = static_cast<uint32_t>(vk_extensions.size());
-	inst_info.ppEnabledExtensionNames = vk_extensions.data();
+	inst_info.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
+	inst_info.ppEnabledExtensionNames = instance_extensions.data();
 
 	vk_error = vkCreateInstance(&inst_info, nullptr, &m_vk_instance);
 	if (vk_error != VK_SUCCESS) {
@@ -453,46 +487,6 @@ bool Renderer::areDeviceLayersSupported(const VkPhysicalDevice& physical_device,
 	return true;
 }
 #endif
-
-bool Renderer::areInstanceExtensionsSupported(const std::vector<const char*>& extensions, std::string& out_error_message)
-{
-	uint32_t supported_extensions_count;
-	VkResult vk_error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, nullptr);
-	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate Vulkan instance extensions. VK error:" + std::to_string(vk_error) + ".";
-		return false;
-	}
-
-	if (supported_extensions_count == 0) {
-		out_error_message = "No Vulkan instance extensions found.";
-		return false;
-	}
-
-	std::vector<VkExtensionProperties> supported_extensions(supported_extensions_count);
-	vk_error = vkEnumerateInstanceExtensionProperties(nullptr, &supported_extensions_count, supported_extensions.data());
-	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate Vulkan instance extensions. VK error:" + std::to_string(vk_error) + ".";
-		return false;
-	}
-
-	for (const char* const extension : extensions) {
-		bool found = false;
-
-		for (const VkExtensionProperties& supported_extension : supported_extensions) {
-			if (std::string(extension) == std::string(supported_extension.extensionName)) {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			out_error_message = "Vulkan instance extension \"" + std::string(extension) + "\" not supported.";
-			return false;
-		}
-	}
-
-	return true;
-}
 
 bool Renderer::areDeviceExtensionsSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& extensions, std::string& out_error_message)
 {
