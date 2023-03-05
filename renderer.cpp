@@ -401,6 +401,11 @@ bool Renderer::createLogicalDevice(const VkPhysicalDevice& physical_device, std:
 		return false;
 	}
 
+	if (m_vk_logical_device != VK_NULL_HANDLE) {
+		out_error_message = "Vulkan logical device already created.";
+		return false;
+	}
+
 	VkPhysicalDeviceProperties physical_device_properties;
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
 
