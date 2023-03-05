@@ -8,12 +8,9 @@ Renderer::~Renderer()
 }
 
 bool Renderer::init(
-	std::string& out_error_message
+	std::string& out_error_message, HINSTANCE app_instance, HWND window
 #ifdef DEBUG
 	, PFN_vkDebugUtilsMessengerCallbackEXT vulkan_debug_callback, void* vulkan_debug_callback_user_data
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-	, HINSTANCE app_instance, HWND window
 #endif
 )
 {
@@ -60,10 +57,8 @@ bool Renderer::init(
 #endif
 
 	std::vector<const char*> vk_extensions{
-		 VK_KHR_SURFACE_EXTENSION_NAME
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-		 , VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-#endif
+		 VK_KHR_SURFACE_EXTENSION_NAME,
+		 VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 #ifdef DEBUG
 		 , VK_EXT_DEBUG_UTILS_EXTENSION_NAME
 #endif
@@ -77,10 +72,10 @@ bool Renderer::init(
 	VkApplicationInfo app_info{};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.pNext = nullptr;
-	app_info.pApplicationName = "Simulator";
-	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
-	app_info.pEngineName = "none";
-	app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
+	app_info.pApplicationName = nullptr;
+	app_info.applicationVersion = 0;
+	app_info.pEngineName = nullptr;
+	app_info.engineVersion = 0;
 	app_info.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
 
 #ifdef DEBUG
@@ -137,7 +132,6 @@ bool Renderer::init(
 	}
 #endif
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 	VkWin32SurfaceCreateInfoKHR create_info{};
 	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	create_info.pNext = nullptr;
@@ -151,7 +145,6 @@ bool Renderer::init(
 		destroy();
 		return false;
 	}
-#endif
 
 	m_initialized = true;
 	return true;

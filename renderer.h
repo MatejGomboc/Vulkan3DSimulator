@@ -9,12 +9,9 @@ namespace Simulator {
 	public:
 		~Renderer();
 		bool init(
-			std::string& out_error_message
+			std::string& out_error_message, HINSTANCE app_instance, HWND window
 #ifdef DEBUG
 			, PFN_vkDebugUtilsMessengerCallbackEXT vulkan_debug_callback, void* vulkan_debug_callback_user_data
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-			, HINSTANCE app_instance, HWND window
 #endif
 		);
 		void destroy();
