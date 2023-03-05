@@ -20,7 +20,6 @@ namespace Simulator {
 
 	private:
 #ifdef DEBUG
-		static bool areInstanceLayersSupported(const std::vector<const char*>& layers, std::string& out_error_message);
 		static bool areDeviceLayersSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& layers, std::string& out_error_message);
 #endif
 		static bool areInstanceExtensionsSupported(const std::vector<const char*>& extensions, std::string& out_error_message);

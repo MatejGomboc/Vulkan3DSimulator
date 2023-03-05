@@ -46,13 +46,47 @@ bool Renderer::init(
 	}
 
 #ifdef DEBUG
-	std::vector<const char*> vk_layers{
+	std::vector<const char*> instance_layers{
 		VK_LAYER_KHRONOS_VALIDATION_NAME
 	};
 
-	if (!areInstanceLayersSupported(vk_layers, out_error_message)) {
+	uint32_t supported_instance_layers_count;
+	VkResult vk_error = vkEnumerateInstanceLayerProperties(&supported_instance_layers_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan instance layers. VK error:" + std::to_string(vk_error) + ".";
 		destroy();
 		return false;
+	}
+
+	if (supported_instance_layers_count == 0) {
+		out_error_message = "No Vulkan instance layers found.";
+		destroy();
+		return false;
+	}
+
+	std::vector<VkLayerProperties> supported_instance_layers(supported_instance_layers_count);
+	vk_error = vkEnumerateInstanceLayerProperties(&supported_instance_layers_count, supported_instance_layers.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate Vulkan instance layers. VK error:" + std::to_string(vk_error) + ".";
+		destroy();
+		return false;
+	}
+
+	for (const char* const instance_layer : instance_layers) {
+		bool found = false;
+
+		for (const VkLayerProperties& supported_instance_layer : supported_instance_layers) {
+			if (std::string(instance_layer) == std::string(supported_instance_layer.layerName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			out_error_message = "Vulkan instance layer \"" + std::string(instance_layer) + "\" not supported.";
+			destroy();
+			return false;
+		}
 	}
 #endif
 
@@ -105,8 +139,8 @@ bool Renderer::init(
 	inst_info.flags = 0;
 	inst_info.pApplicationInfo = &app_info;
 #ifdef DEBUG
-	inst_info.enabledLayerCount = static_cast<uint32_t>(vk_layers.size());
-	inst_info.ppEnabledLayerNames = vk_layers.data();
+	inst_info.enabledLayerCount = static_cast<uint32_t>(instance_layers.size());
+	inst_info.ppEnabledLayerNames = instance_layers.data();
 #else
 	inst_info.enabledLayerCount = 0;
 	inst_info.ppEnabledLayerNames = nullptr;
@@ -114,7 +148,7 @@ bool Renderer::init(
 	inst_info.enabledExtensionCount = static_cast<uint32_t>(vk_extensions.size());
 	inst_info.ppEnabledExtensionNames = vk_extensions.data();
 
-	VkResult vk_error = vkCreateInstance(&inst_info, nullptr, &m_vk_instance);
+	vk_error = vkCreateInstance(&inst_info, nullptr, &m_vk_instance);
 	if (vk_error != VK_SUCCESS) {
 		out_error_message = "Failed to create Vulkan instance. VK error:" + std::to_string(vk_error) + ".";
 		destroy();
@@ -372,45 +406,6 @@ bool Renderer::createLogicalDevice(const VkPhysicalDevice& physical_device, std:
 }
 
 #ifdef DEBUG
-bool Renderer::areInstanceLayersSupported(const std::vector<const char*>& layers, std::string& out_error_message)
-{
-	uint32_t supported_layers_count;
-	VkResult vk_error = vkEnumerateInstanceLayerProperties(&supported_layers_count, nullptr);
-	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate Vulkan instance layers. VK error:" + std::to_string(vk_error) + ".";
-		return false;
-	}
-
-	if (supported_layers_count == 0) {
-		out_error_message = "No Vulkan instance layers found.";
-		return false;
-	}
-
-	std::vector<VkLayerProperties> supported_layers(supported_layers_count);
-	vk_error = vkEnumerateInstanceLayerProperties(&supported_layers_count, supported_layers.data());
-	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate Vulkan instance layers. VK error:" + std::to_string(vk_error) + ".";
-		return false;
-	}
-
-	for (const char* const layer : layers) {
-		bool found = false;
-
-		for (const VkLayerProperties& supported_layer : supported_layers) {
-			if (std::string(layer) == std::string(supported_layer.layerName)) {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			out_error_message = "Vulkan instance layer \"" + std::string(layer) + "\" not supported.";
-			return false;
-		}
-	}
-
-	return true;
-}
 
 bool Renderer::areDeviceLayersSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& layers, std::string& out_error_message)
 {
