@@ -19,9 +19,6 @@ namespace Simulator {
 		bool createLogicalDevice(const VkPhysicalDevice& physical_device, std::string& out_error_message);
 
 	private:
-#ifdef DEBUG
-		static bool areDeviceLayersSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& layers, std::string& out_error_message);
-#endif
 		static bool areDeviceExtensionsSupported(const VkPhysicalDevice& physical_device, const std::vector<const char*>& extensions, std::string& out_error_message);
 
 #ifdef DEBUG
