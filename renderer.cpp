@@ -45,6 +45,8 @@ bool Renderer::init(
 		return false;
 	}
 
+	/**************************************************************************************/
+
 #ifdef DEBUG
 	std::vector<const char*> instance_layers{
 		VK_LAYER_KHRONOS_VALIDATION_NAME
@@ -89,6 +91,8 @@ bool Renderer::init(
 		}
 	}
 #endif
+
+	/**************************************************************************************/
 
 	std::vector<const char*> instance_extensions{
 		 VK_KHR_SURFACE_EXTENSION_NAME,
@@ -136,6 +140,8 @@ bool Renderer::init(
 			return false;
 		}
 	}
+
+	/**************************************************************************************/
 
 	VkApplicationInfo app_info{};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -191,6 +197,8 @@ bool Renderer::init(
 
 	volkLoadInstanceOnly(m_vk_instance);
 
+	/**************************************************************************************/
+
 #ifdef DEBUG
 	vk_error = vkCreateDebugUtilsMessengerEXT(m_vk_instance, &debug_messenger_info, nullptr, &m_vk_debug_messenger);
 	if (vk_error != VK_SUCCESS) {
@@ -199,6 +207,8 @@ bool Renderer::init(
 		return false;
 	}
 #endif
+
+	/**************************************************************************************/
 
 	VkWin32SurfaceCreateInfoKHR create_info{};
 	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -336,6 +346,54 @@ bool Renderer::createLogicalDevice(const VkPhysicalDevice& physical_device, std:
 	VkPhysicalDeviceProperties physical_device_properties;
 	vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
 
+	/**************************************************************************************/
+
+#ifdef DEBUG
+	std::vector<const char*> device_layers{
+		VK_LAYER_KHRONOS_VALIDATION_NAME
+	};
+
+	uint32_t supported_device_layers_count;
+	VkResult vk_error = vkEnumerateDeviceLayerProperties(physical_device, &supported_device_layers_count, nullptr);
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate layers for Vulkan physical device: \"" + std::string(physical_device_properties.deviceName) + "\". "
+			"VK error:" + std::to_string(vk_error) + ".";
+		return false;
+	}
+
+	if (supported_device_layers_count == 0) {
+		out_error_message = "No layers found for Vulkan physical device: \"" + std::string(physical_device_properties.deviceName) + "\".";
+		return false;
+	}
+
+	std::vector<VkLayerProperties> supported_device_layers(supported_device_layers_count);
+	vk_error = vkEnumerateDeviceLayerProperties(physical_device, &supported_device_layers_count, supported_device_layers.data());
+	if (vk_error != VK_SUCCESS) {
+		out_error_message = "Failed to enumerate layers for Vulkan physical device: \"" + std::string(physical_device_properties.deviceName) + "\". "
+			"VK error:" + std::to_string(vk_error) + ".";
+		return false;
+	}
+
+	for (const char* const device_layer : device_layers) {
+		bool found = false;
+
+		for (const VkLayerProperties& supported_device_layer : supported_device_layers) {
+			if (std::string(device_layer) == std::string(supported_device_layer.layerName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			out_error_message = "Layer \"" + std::string(device_layer) + "\" not supported for Vulkan physical device: \"" +
+				std::string(physical_device_properties.deviceName) + "\".";
+			return false;
+		}
+	}
+#endif
+
+	/**************************************************************************************/
+
 	uint32_t queue_families_count;
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, nullptr);
 
@@ -382,7 +440,10 @@ bool Renderer::createLogicalDevice(const VkPhysicalDevice& physical_device, std:
 		return false;
 	}
 
+	/**************************************************************************************/
+
 	float device_queue_priority = 1.0f;
+
 	VkDeviceQueueCreateInfo device_queue_create_info{};
 	device_queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	device_queue_create_info.pNext = nullptr;
@@ -396,50 +457,6 @@ bool Renderer::createLogicalDevice(const VkPhysicalDevice& physical_device, std:
 		device_queue_create_info.queueFamilyIndex = present_queue_family_idx;
 		device_queue_create_infos.push_back(device_queue_create_info);
 	}
-
-#ifdef DEBUG
-	std::vector<const char*> device_layers{
-		VK_LAYER_KHRONOS_VALIDATION_NAME
-	};
-
-	uint32_t supported_device_layers_count;
-	VkResult vk_error = vkEnumerateDeviceLayerProperties(physical_device, &supported_device_layers_count, nullptr);
-	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate layers for Vulkan physical device: \"" + std::string(physical_device_properties.deviceName) + "\". "
-			"VK error:" + std::to_string(vk_error) + ".";
-		return false;
-	}
-
-	if (supported_device_layers_count == 0) {
-		out_error_message = "No layers found for Vulkan physical device: \"" + std::string(physical_device_properties.deviceName) + "\".";
-		return false;
-	}
-
-	std::vector<VkLayerProperties> supported_device_layers(supported_device_layers_count);
-	vk_error = vkEnumerateDeviceLayerProperties(physical_device, &supported_device_layers_count, supported_device_layers.data());
-	if (vk_error != VK_SUCCESS) {
-		out_error_message = "Failed to enumerate layers for Vulkan physical device: \"" + std::string(physical_device_properties.deviceName) + "\". "
-			"VK error:" + std::to_string(vk_error) + ".";
-		return false;
-	}
-
-	for (const char* const device_layer : device_layers) {
-		bool found = false;
-
-		for (const VkLayerProperties& supported_device_layer : supported_device_layers) {
-			if (std::string(device_layer) == std::string(supported_device_layer.layerName)) {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			out_error_message = "Layer \"" + std::string(device_layer) + "\" not supported for Vulkan physical device: \"" +
-				std::string(physical_device_properties.deviceName) + "\".";
-			return false;
-		}
-	}
-#endif
 
 	VkPhysicalDeviceFeatures enabled_device_features{};
 
