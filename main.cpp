@@ -11,7 +11,7 @@ struct MainWindowUserData {
 };
 
 #ifdef DEBUG
-VkBool32 VKAPI_PTR vulkanDebugCallback(
+static VkBool32 VKAPI_PTR vulkanDebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
 	VkDebugUtilsMessageTypeFlagsEXT message_type,
 	const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
@@ -50,6 +50,7 @@ VkBool32 VKAPI_PTR vulkanDebugCallback(
 	type_str += "]";
 
 	auto logger = static_cast<Simulator::Logger*>(user_data);
+
 	logger->logWrite("[LAYER] " + severity_str + " " + type_str + " " +
 		std::string(callback_data->pMessage));
 
