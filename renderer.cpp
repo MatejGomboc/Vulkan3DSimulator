@@ -48,10 +48,6 @@ bool Renderer::init(
 	/**************************************************************************************/
 
 #ifdef DEBUG
-	std::vector<const char*> instance_layers{
-		VK_LAYER_KHRONOS_VALIDATION_NAME
-	};
-
 	uint32_t supported_instance_layers_count;
 	VkResult vk_error = vkEnumerateInstanceLayerProperties(&supported_instance_layers_count, nullptr);
 	if (vk_error != VK_SUCCESS) {
@@ -73,6 +69,10 @@ bool Renderer::init(
 		destroy();
 		return false;
 	}
+
+	std::vector<const char*> instance_layers{
+		VK_LAYER_KHRONOS_VALIDATION_NAME
+	};
 
 	for (const char* const instance_layer : instance_layers) {
 		bool found = false;
@@ -281,12 +281,6 @@ bool Renderer::getSupportedPhysicalDevices(std::vector<VkPhysicalDevice>& out_su
 		return false;
 	}
 
-#ifdef DEBUG
-	std::vector<const char*> device_layers{
-		VK_LAYER_KHRONOS_VALIDATION_NAME
-	};
-#endif
-
 	/**************************************************************************************/
 
 	for (const VkPhysicalDevice& physical_device : physical_devices) {
@@ -318,6 +312,10 @@ bool Renderer::getSupportedPhysicalDevices(std::vector<VkPhysicalDevice>& out_su
 		}
 
 		bool device_supported = true;
+
+		std::vector<const char*> device_layers{
+			VK_LAYER_KHRONOS_VALIDATION_NAME
+		};
 
 		for (const char* const device_layer : device_layers) {
 			bool device_layer_found = false;
